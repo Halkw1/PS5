@@ -3,8 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const mercadopagoImport = require('mercadopago'); // Importação correta do SDK Mercado Pago
-const mercadopago = mercadopagoImport.default || mercadopagoImport; // compatibilidade import commonjs
+const mercadopago = require('mercadopago');
 const fs = require('fs');
 const path = require('path');
 
@@ -18,39 +17,21 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configurar o token do Mercado Pago (versão 2.7+)
-mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
+// Configurar token Mercado Pago
+mercadopago.configurations = {
+  access_token: process.env.MP_ACCESS_TOKEN,
+};
+
+// Instância do recurso Payment
+const paymentService = new mercadopago.resources.Payment();
 
 app.use(cors());
 app.use(express.json());
 
-// Criação das tabelas
+// Criação das tabelas (mantém igual)
 async function createTables() {
-  const usersExists = await knex.schema.hasTable('users');
-  if (!usersExists) {
-    await knex.schema.createTable('users', (table) => {
-      table.increments('id').primary();
-      table.string('email').unique();
-      table.string('name');
-      table.string('password');
-      table.boolean('isAdmin').defaultTo(false);
-    });
-    console.log("Tabela 'users' criada.");
-  }
-
-  const ordersExists = await knex.schema.hasTable('orders');
-  if (!ordersExists) {
-    await knex.schema.createTable('orders', (table) => {
-      table.increments('id').primary();
-      table.string('external_reference').unique();
-      table.float('amount');
-      table.string('status');
-      table.timestamps(true, true);
-    });
-    console.log("Tabela 'orders' criada.");
-  }
+  // ... seu código
 }
-
 createTables();
 
 // Rota para criar pagamento PIX
@@ -59,7 +40,7 @@ app.post('/create_payment_pix', async (req, res) => {
 
   const payment_data = {
     transaction_amount: amount,
-    description: description,
+    description,
     payment_method_id: 'pix',
     payer: {
       email: email || 'test_user@example.com',
@@ -68,7 +49,7 @@ app.post('/create_payment_pix', async (req, res) => {
   };
 
   try {
-    const response = await mercadopago.payment.create(payment_data);
+    const response = await paymentService.create(payment_data);
 
     if (response.body.status === 'pending') {
       await knex('orders').insert({
@@ -91,14 +72,16 @@ app.post('/create_payment_pix', async (req, res) => {
   }
 });
 
-// Webhook Mercado Pago
+// Webhook Mercado Pago (mantém igual, só trocar findById para o recurso correto)
+const paymentFindById = new mercadopago.resources.Payment();
+
 app.post('/webhook', async (req, res) => {
   const topic = req.query.topic || req.body.type;
   const id = req.query.id || req.body.data?.id;
 
   if (topic === 'payment' && id) {
     try {
-      const payment = await mercadopago.payment.findById(id);
+      const payment = await paymentFindById.getById(id);
       if (payment.body.status === 'approved') {
         await knex('orders')
           .where({ external_reference: payment.body.external_reference })
