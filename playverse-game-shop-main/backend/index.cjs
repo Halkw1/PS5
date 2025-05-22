@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// **Certifique-se de que a configuração está sendo feita corretamente**
+// Configuração do Mercado Pago para a versão 2.7.0
 mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
 
 app.use(cors());
@@ -112,4 +112,8 @@ app.post('/webhook', async (req, res) => {
   }
 
   res.sendStatus(200);
+});
+
+app.listen(PORT, () => {
+  console.log(`Backend rodando na porta ${PORT}`);
 });
