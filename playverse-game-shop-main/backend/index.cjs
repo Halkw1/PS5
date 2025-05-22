@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
 // Configura token Mercado Pago
-mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
+mercadopago.access_token = process.env.MP_ACCESS_TOKEN;
 
 app.use(cors());
 app.use(express.json());
