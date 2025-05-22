@@ -9,6 +9,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrder } from "@/contexts/OrderContext";
+import { PixPayment } from "@/components/PixPayment";
+
+
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
@@ -27,6 +30,17 @@ export default function CheckoutPage() {
     country: "",
     paymentMethod: "credit-card",
   });
+  {formData.paymentMethod === "pix" && (
+  <div className="mt-4">
+    <PixPayment
+      amount={totalPrice}
+      description="Compra no Playverse"
+      email={formData.email}
+      externalReference={"pedido_" + Date.now()}
+    />
+  </div>
+)}
+
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
