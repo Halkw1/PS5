@@ -17,8 +17,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configura token Mercado Pago
-mercadopago.access_token = process.env.MP_ACCESS_TOKEN;
+// Inicialize SDK Mercado Pago
+const mp = new mercadopago.SDK({
+  access_token: process.env.MP_ACCESS_TOKEN,
+});
 
 app.use(cors());
 app.use(express.json());
@@ -97,16 +99,23 @@ app.post('/login', async (req, res) => {
 // Criar pagamento PIX
 app.post('/create_payment_pix', async (req, res) => {
   const { amount, description, email, external_reference } = req.body;
-  try {
-    const payment_data = {
-      transaction_amount: amount,
-      description,
-      payment_method_id: 'pix',
-      payer: { email: email || 'test_user@example.com' },
-      external_reference,
-    };
 
-    const response = await mercadopago.payment.create(payment_data);
+  const payment_data = {
+    transaction_amount: amount,
+    description,
+    payment_method_id: 'pix',
+    payer: {
+      email: email || 'test_user@example.com',
+    },
+    external_reference,
+  };
+
+  try {
+    console.log('Dados para pagamento PIX:', payment_data);
+
+    const response = await mp.payment.create(payment_data);
+
+    console.log('Resposta Mercado Pago:', response);
 
     if (response.body.status === 'pending') {
       await knex('orders').insert({
@@ -124,20 +133,7 @@ app.post('/create_payment_pix', async (req, res) => {
       res.status(400).json({ message: 'Erro ao criar pagamento PIX' });
     }
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erro interno no servidor' });
-  }
-});
-
-// Rota para consultar status do pedido (polling frontend)
-app.get('/orders/status/:external_reference', async (req, res) => {
-  const { external_reference } = req.params;
-  try {
-    const order = await knex('orders').where({ external_reference }).first();
-    if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
-    res.json({ status: order.status });
-  } catch (error) {
-    console.error('Erro ao buscar status:', error);
+    console.error('Erro no pagamento PIX:', error);
     res.status(500).json({ message: 'Erro interno no servidor' });
   }
 });
@@ -149,7 +145,7 @@ app.post('/webhook', async (req, res) => {
 
   if (topic === 'payment' && id) {
     try {
-      const payment = await mercadopago.payment.findById(id);
+      const payment = await mp.payment.findById(id);
       if (payment.body.status === 'approved') {
         await knex('orders')
           .where({ external_reference: payment.body.external_reference })
