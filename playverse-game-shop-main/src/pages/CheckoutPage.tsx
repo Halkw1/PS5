@@ -2,8 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout/Layout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +26,9 @@ export default function CheckoutPage() {
     paymentMethod: "credit-card",
   });
 
+  // Gera o externalReference fixo só uma vez para usar no PIX
+  const [externalReference] = useState(() => `pedido_${Date.now()}`);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -47,7 +48,7 @@ export default function CheckoutPage() {
     try {
       if (formData.paymentMethod === 'pix') {
         alert('Por favor, escaneie o QR code PIX e aguarde confirmação do pagamento.');
-        // Não finalize nem limpe o carrinho ainda
+        // Não finalize nem limpe o carrinho aqui, pois isso será feito após confirmação no PixPayment
       } else {
         const order = await createOrder(items, totalPrice);
         clearCart();
@@ -78,8 +79,8 @@ export default function CheckoutPage() {
             {/* Checkout Form */}
             <div className="md:col-span-2">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Form fields... */}
-
+                {/* Form fields (ex: nome, email, endereço) */}
+                {/* ... */}
                 {/* Payment Method */}
                 <div className="p-6 bg-card rounded-lg space-y-4">
                   <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
@@ -89,32 +90,25 @@ export default function CheckoutPage() {
                     onValueChange={handleRadioChange}
                     className="space-y-4"
                   >
-                    {/* Other payment methods */}
                     <div className="flex items-center space-x-2 border p-4 rounded-md">
                       <RadioGroupItem value="credit-card" id="credit-card" />
-                      <Label htmlFor="credit-card" className="flex-1 cursor-pointer">
+                      <label htmlFor="credit-card" className="flex-1 cursor-pointer">
                         Credit/Debit Card
-                      </Label>
-                      {/* card logos */}
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2 border p-4 rounded-md">
                       <RadioGroupItem value="paypal" id="paypal" />
-                      <Label htmlFor="paypal" className="flex-1 cursor-pointer">
+                      <label htmlFor="paypal" className="flex-1 cursor-pointer">
                         PayPal
-                      </Label>
+                      </label>
                     </div>
                     <div className="flex items-center space-x-2 border p-4 rounded-md">
                       <RadioGroupItem value="pix" id="pix" />
-                      <Label htmlFor="pix" className="flex-1 cursor-pointer">
+                      <label htmlFor="pix" className="flex-1 cursor-pointer">
                         PIX
-                      </Label>
+                      </label>
                     </div>
                   </RadioGroup>
-
-                  {formData.paymentMethod === "credit-card" && (
-                    /* credit card fields */
-                    <></>
-                  )}
 
                   {formData.paymentMethod === "pix" && (
                     <div className="mt-4">
@@ -122,10 +116,10 @@ export default function CheckoutPage() {
                         amount={totalPrice}
                         description="Compra no Playverse"
                         email={formData.email}
-                        externalReference={`pedido_${Date.now()}`}
+                        externalReference={externalReference}
                         onPaymentApproved={() => {
                           clearCart();
-                          navigate('/order-confirmation/some-order-id');
+                          navigate(`/order-confirmation/${externalReference}`);
                         }}
                       />
                     </div>

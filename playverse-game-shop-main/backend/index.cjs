@@ -86,6 +86,26 @@ app.post('/webhook', async (req, res) => {
 
   res.sendStatus(200);
 });
+// Rota para consultar status do pedido pelo external_reference
+app.get('/orders/status/:external_reference', async (req, res) => {
+  const { external_reference } = req.params;
+
+  try {
+    const order = await knex('orders')
+      .where({ external_reference })
+      .first();
+
+    if (!order) {
+      return res.status(404).json({ message: 'Pedido não encontrado' });
+    }
+
+    return res.json({ status: order.status });
+  } catch (error) {
+    console.error('Erro ao buscar status do pedido:', error);
+    return res.status(500).json({ message: 'Erro interno no servidor' });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Backend rodando na porta ${PORT}`);
