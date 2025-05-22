@@ -56,19 +56,21 @@ createTables();
 app.post('/create_payment_pix', async (req, res) => {
   const { amount, description, email, external_reference } = req.body;
 
-  try {
-    const payment_data = {
-      transaction_amount: amount,
-      description,
-      payment_method_id: 'pix',
-      payer: { email: email || 'test_user@example.com' },
-      external_reference,
-    };
+  const payment_data = {
+    transaction_amount: amount,
+    description: description,
+    payment_method_id: 'pix',
+    payer: {
+      email: email || 'test_user@example.com',
+    },
+    external_reference,
+  };
 
-    // **Alteração importante: usar o método correto**
+  try {
     const response = await mercadopago.payment.create(payment_data);
 
     if (response.body.status === 'pending') {
+      // Se o pagamento foi criado com sucesso, insira o pedido no banco
       await knex('orders').insert({
         external_reference,
         amount,
@@ -85,7 +87,7 @@ app.post('/create_payment_pix', async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Erro interno no servidor' });
+    res.status(500).json({ message: 'Erro interno ao processar pagamento' });
   }
 });
 
@@ -110,8 +112,4 @@ app.post('/webhook', async (req, res) => {
   }
 
   res.sendStatus(200);
-});
-
-app.listen(PORT, () => {
-  console.log(`Backend rodando na porta ${PORT}`);
 });
