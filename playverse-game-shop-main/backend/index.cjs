@@ -129,6 +129,19 @@ app.post('/create_payment_pix', async (req, res) => {
   }
 });
 
+// Rota para consultar status do pedido (polling frontend)
+app.get('/orders/status/:external_reference', async (req, res) => {
+  const { external_reference } = req.params;
+  try {
+    const order = await knex('orders').where({ external_reference }).first();
+    if (!order) return res.status(404).json({ message: 'Pedido não encontrado' });
+    res.json({ status: order.status });
+  } catch (error) {
+    console.error('Erro ao buscar status:', error);
+    res.status(500).json({ message: 'Erro interno no servidor' });
+  }
+});
+
 // Webhook Mercado Pago
 app.post('/webhook', async (req, res) => {
   const topic = req.query.topic || req.body.type;
