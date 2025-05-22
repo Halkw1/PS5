@@ -106,6 +106,16 @@ app.get('/orders/status/:external_reference', async (req, res) => {
   }
 });
 
+// Rota para listar todos os pedidos (debug)
+app.get('/orders', async (req, res) => {
+  try {
+    const orders = await knex('orders').select('external_reference', 'amount', 'status', 'created_at');
+    res.json(orders);
+  } catch (error) {
+    console.error('Erro ao listar pedidos:', error);
+    res.status(500).json({ message: 'Erro interno no servidor' });
+  }
+});
 
 app.listen(PORT, () => {
   console.log(`Backend rodando na porta ${PORT}`);
