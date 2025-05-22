@@ -17,8 +17,10 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configuração do Mercado Pago para a versão 2.7.0
-mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
+// **Alteração no código de configuração do Mercado Pago**
+mercadopago.configurations = {
+  access_token: process.env.MP_ACCESS_TOKEN,
+};
 
 app.use(cors());
 app.use(express.json());
