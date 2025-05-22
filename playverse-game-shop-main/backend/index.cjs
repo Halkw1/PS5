@@ -17,8 +17,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configuração correta para a versão 2.7 do SDK Mercado Pago
-mercadopago.access_token = process.env.MP_ACCESS_TOKEN;
+// **Certifique-se de que a configuração está sendo feita corretamente**
+mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
 
 app.use(cors());
 app.use(express.json());
@@ -65,6 +65,7 @@ app.post('/create_payment_pix', async (req, res) => {
       external_reference,
     };
 
+    // **Alteração importante: usar o método correto**
     const response = await mercadopago.payment.create(payment_data);
 
     if (response.body.status === 'pending') {
