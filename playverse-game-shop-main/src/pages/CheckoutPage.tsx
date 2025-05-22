@@ -8,7 +8,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrder } from "@/contexts/OrderContext";
-import { PixPayment } from "@/components/PixPayment";
+import { PixPayment } from '@/components/PixPayment';
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
