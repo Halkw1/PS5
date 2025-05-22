@@ -23,11 +23,11 @@ export function PixPayment({
   useEffect(() => {
     async function createPixPayment() {
       try {
-        const res = await fetch('https://ps5-89py.onrender.com/create_payment_pix', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount, description, email, external_reference: externalReference }),
-        });
+   const res = await fetch('https://ps5-89py.onrender.com/create_payment_pix', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ amount, description, email, external_reference: externalReference }),
+});
 
         if (!res.ok) {
           throw new Error('Erro ao gerar pagamento PIX');
