@@ -17,15 +17,13 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Inicialize SDK Mercado Pago
-const mp = new mercadopago.SDK({
-  access_token: process.env.MP_ACCESS_TOKEN,
-});
+// Configurar Mercado Pago para versão antiga do SDK
+mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
 
 app.use(cors());
 app.use(express.json());
 
-// Criação das tabelas
+// Criar tabelas caso não existam
 async function createTables() {
   const usersExists = await knex.schema.hasTable('users');
   if (!usersExists) {
@@ -54,7 +52,7 @@ async function createTables() {
 
 createTables();
 
-// Registro
+// Registro de usuário
 app.post('/register', async (req, res) => {
   const { email, name, password } = req.body;
   try {
@@ -77,7 +75,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Login
+// Login de usuário
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -113,7 +111,7 @@ app.post('/create_payment_pix', async (req, res) => {
   try {
     console.log('Dados para pagamento PIX:', payment_data);
 
-    const response = await mp.payment.create(payment_data);
+    const response = await mercadopago.payment.create(payment_data);
 
     console.log('Resposta Mercado Pago:', response);
 
@@ -138,14 +136,14 @@ app.post('/create_payment_pix', async (req, res) => {
   }
 });
 
-// Webhook Mercado Pago
+// Webhook Mercado Pago para atualizar status do pagamento
 app.post('/webhook', async (req, res) => {
   const topic = req.query.topic || req.body.type;
   const id = req.query.id || req.body.data?.id;
 
   if (topic === 'payment' && id) {
     try {
-      const payment = await mp.payment.findById(id);
+      const payment = await mercadopago.payment.findById(id);
       if (payment.body.status === 'approved') {
         await knex('orders')
           .where({ external_reference: payment.body.external_reference })
@@ -161,6 +159,7 @@ app.post('/webhook', async (req, res) => {
   res.sendStatus(200);
 });
 
+// Start do servidor
 app.listen(PORT, () => {
   console.log(`Backend rodando na porta ${PORT}`);
 });
