@@ -10,15 +10,15 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configura Mercado Pago
-mercadopago.configure({
+// Configurar Mercado Pago SDK (v2+)
+const mp = new mercadopago.SDK({
   access_token: process.env.MP_ACCESS_TOKEN,
 });
 
 app.use(cors());
 app.use(express.json());
 
-// Criação das tabelas (caso não existam)
+// Criar tabelas se não existirem
 async function createTables() {
   const usersExists = await knex.schema.hasTable('users');
   if (!usersExists) {
@@ -47,7 +47,7 @@ async function createTables() {
 
 createTables();
 
-// Registro de usuário
+// Rota de registro
 app.post('/register', async (req, res) => {
   const { email, name, password } = req.body;
   try {
@@ -70,7 +70,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Login
+// Rota de login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -101,7 +101,7 @@ app.post('/create_payment_pix', async (req, res) => {
       external_reference,
     };
 
-    const response = await mercadopago.payment.save(payment_data);
+    const response = await mp.payment.create(payment_data);
 
     if (response.body.status === 'pending') {
       await knex('orders').insert({
@@ -131,7 +131,7 @@ app.post('/webhook', async (req, res) => {
 
   if (topic === 'payment' && id) {
     try {
-      const payment = await mercadopago.payment.findById(id);
+      const payment = await mp.payment.findById(id);
       if (payment.body.status === 'approved') {
         await knex('orders')
           .where({ external_reference: payment.body.external_reference })
