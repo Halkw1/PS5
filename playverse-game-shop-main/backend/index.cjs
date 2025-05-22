@@ -3,7 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const mercadopago = require('mercadopago');
+
+const mercadopagoImport = require('mercadopago');
+const mercadopago = mercadopagoImport.default || mercadopagoImport;
+
 const fs = require('fs');
 const path = require('path');
 
@@ -17,22 +20,12 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configurar token Mercado Pago
 mercadopago.configurations = {
   access_token: process.env.MP_ACCESS_TOKEN,
 };
 
-// Instância do recurso Payment
-const paymentService = new mercadopago.resources.Payment();
-
 app.use(cors());
 app.use(express.json());
-
-// Criação das tabelas (mantém igual)
-async function createTables() {
-  // ... seu código
-}
-createTables();
 
 // Rota para criar pagamento PIX
 app.post('/create_payment_pix', async (req, res) => {
@@ -49,7 +42,7 @@ app.post('/create_payment_pix', async (req, res) => {
   };
 
   try {
-    const response = await paymentService.create(payment_data);
+    const response = await mercadopago.payment.create(payment_data);
 
     if (response.body.status === 'pending') {
       await knex('orders').insert({
@@ -58,35 +51,32 @@ app.post('/create_payment_pix', async (req, res) => {
         status: 'pending',
       });
 
-      res.json({
+      return res.json({
         qr_code: response.body.point_of_interaction.transaction_data.qr_code,
         qr_code_base64: response.body.point_of_interaction.transaction_data.qr_code_base64,
         id: response.body.id,
       });
-    } else {
-      res.status(400).json({ message: 'Erro ao criar pagamento PIX' });
     }
+
+    return res.status(400).json({ message: 'Erro ao criar pagamento PIX' });
   } catch (error) {
     console.error('Erro no pagamento PIX:', error);
-    res.status(500).json({ message: 'Erro interno ao processar pagamento' });
+    return res.status(500).json({ message: 'Erro interno ao processar pagamento' });
   }
 });
 
-// Webhook Mercado Pago (mantém igual, só trocar findById para o recurso correto)
-const paymentFindById = new mercadopago.resources.Payment();
-
+// Webhook (exemplo para pegar pagamento por id)
 app.post('/webhook', async (req, res) => {
   const topic = req.query.topic || req.body.type;
   const id = req.query.id || req.body.data?.id;
 
   if (topic === 'payment' && id) {
     try {
-      const payment = await paymentFindById.getById(id);
+      const payment = await mercadopago.payment.findById(id);
       if (payment.body.status === 'approved') {
         await knex('orders')
           .where({ external_reference: payment.body.external_reference })
           .update({ status: 'paid' });
-
         console.log(`Pedido ${payment.body.external_reference} pago.`);
       }
     } catch (error) {
