@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configura token Mercado Pago para versão 2.7
+// Configurar token Mercado Pago corretamente para versão 2.7
 mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
 
 app.use(cors());
@@ -52,68 +52,20 @@ async function createTables() {
 
 createTables();
 
-// Registro de usuário
-app.post('/register', async (req, res) => {
-  const { email, name, password } = req.body;
-  try {
-    const existingUser = await knex('users').where({ email }).first();
-    if (existingUser) return res.status(400).json({ message: 'Email already in use' });
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await knex('users').insert({
-      email,
-      name,
-      password: hashedPassword,
-      isAdmin: false,
-    });
-
-    res.json({ message: 'User registered successfully' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Login
-app.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-  try {
-    const user = await knex('users').where({ email }).first();
-    if (!user) return res.status(400).json({ message: 'Invalid email or password' });
-
-    const isValid = await bcrypt.compare(password, user.password);
-    if (!isValid) return res.status(400).json({ message: 'Invalid email or password' });
-
-    const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: '1h' });
-
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name } });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Server error' });
-  }
-});
-
-// Criar pagamento PIX com logs detalhados
+// Rota para criar pagamento PIX
 app.post('/create_payment_pix', async (req, res) => {
   const { amount, description, email, external_reference } = req.body;
 
-  const payment_data = {
-    transaction_amount: amount,
-    description,
-    payment_method_id: 'pix',
-    payer: {
-      email: email || 'test_user@example.com',
-    },
-    external_reference,
-  };
-
   try {
-    console.log('Dados para pagamento PIX:', payment_data);
+    const payment_data = {
+      transaction_amount: amount,
+      description,
+      payment_method_id: 'pix',
+      payer: { email: email || 'test_user@example.com' },
+      external_reference,
+    };
 
     const response = await mercadopago.payment.create(payment_data);
-
-    console.log('Resposta Mercado Pago:', response);
 
     if (response.body.status === 'pending') {
       await knex('orders').insert({
@@ -128,16 +80,15 @@ app.post('/create_payment_pix', async (req, res) => {
         id: response.body.id,
       });
     } else {
-      console.error("Pagamento PIX não ficou pendente:", response.body);
-      res.status(400).json({ message: 'Erro ao criar pagamento PIX', details: response.body });
+      res.status(400).json({ message: 'Erro ao criar pagamento PIX' });
     }
   } catch (error) {
-    console.error('Erro no pagamento PIX:', error.response?.body || error.message || error);
-    res.status(500).json({ message: 'Erro interno no servidor', error: error.message });
+    console.error(error);
+    res.status(500).json({ message: 'Erro interno no servidor' });
   }
 });
 
-// Webhook para atualização do status do pagamento
+// Webhook Mercado Pago
 app.post('/webhook', async (req, res) => {
   const topic = req.query.topic || req.body.type;
   const id = req.query.id || req.body.data?.id;
