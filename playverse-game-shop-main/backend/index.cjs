@@ -17,13 +17,13 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configurar access token diretamente para a versão 2.x.x do SDK
+// Configurar token Mercado Pago para versão 2.x
 mercadopago.access_token = process.env.MP_ACCESS_TOKEN;
 
 app.use(cors());
 app.use(express.json());
 
-// Criação das tabelas (usuários e pedidos)
+// Criação das tabelas
 async function createTables() {
   const usersExists = await knex.schema.hasTable('users');
   if (!usersExists) {
@@ -94,7 +94,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-// Criar pagamento PIX
+// Criar pagamento PIX com logs detalhados
 app.post('/create_payment_pix', async (req, res) => {
   const { amount, description, email, external_reference } = req.body;
 
@@ -128,11 +128,12 @@ app.post('/create_payment_pix', async (req, res) => {
         id: response.body.id,
       });
     } else {
-      res.status(400).json({ message: 'Erro ao criar pagamento PIX' });
+      console.error("Pagamento PIX não ficou pendente:", response.body);
+      res.status(400).json({ message: 'Erro ao criar pagamento PIX', details: response.body });
     }
   } catch (error) {
-    console.error('Erro no pagamento PIX:', error);
-    res.status(500).json({ message: 'Erro interno no servidor' });
+    console.error('Erro no pagamento PIX:', error.response?.body || error.message || error);
+    res.status(500).json({ message: 'Erro interno no servidor', error: error.message });
   }
 });
 
