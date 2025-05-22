@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Layout from "@/components/Layout/Layout";
@@ -11,14 +10,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useOrder } from "@/contexts/OrderContext";
 import { PixPayment } from "@/components/PixPayment";
 
-
-
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
   const { user } = useAuth();
   const { createOrder } = useOrder();
   const navigate = useNavigate();
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     fullName: user?.name || "",
@@ -30,34 +27,23 @@ export default function CheckoutPage() {
     country: "",
     paymentMethod: "credit-card",
   });
-  {formData.paymentMethod === "pix" && (
-  <div className="mt-4">
-    <PixPayment
-      amount={totalPrice}
-      description="Compra no Playverse"
-      email={formData.email}
-      externalReference={"pedido_" + Date.now()}
-    />
-  </div>
-)}
 
-  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-  
+
   const handleRadioChange = (value: string) => {
     setFormData((prev) => ({ ...prev, paymentMethod: value }));
   };
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (items.length === 0) return;
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // In a real app, this would handle payment processing
       const order = await createOrder(items, totalPrice);
@@ -75,16 +61,14 @@ export default function CheckoutPage() {
     <Layout>
       <div className="container py-8">
         <h1 className="text-3xl font-bold mb-8">Checkout</h1>
-        
+
         {items.length === 0 ? (
           <div className="text-center py-16">
             <h2 className="text-2xl font-semibold mb-2">Your cart is empty</h2>
             <p className="text-muted-foreground mb-8">
               Add some games to your cart before checking out.
             </p>
-            <Button onClick={() => navigate("/games")}>
-              Browse Games
-            </Button>
+            <Button onClick={() => navigate("/games")}>Browse Games</Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -93,7 +77,7 @@ export default function CheckoutPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="p-6 bg-card rounded-lg space-y-4">
                   <h2 className="text-xl font-semibold mb-4">Contact Information</h2>
-                  
+
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label htmlFor="fullName">Full Name</Label>
@@ -105,7 +89,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
-                    
+
                     <div>
                       <Label htmlFor="email">Email Address</Label>
                       <Input
@@ -119,10 +103,10 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6 bg-card rounded-lg space-y-4">
                   <h2 className="text-xl font-semibold mb-4">Shipping Address</h2>
-                  
+
                   <div className="grid grid-cols-1 gap-4">
                     <div>
                       <Label htmlFor="address">Address</Label>
@@ -134,7 +118,7 @@ export default function CheckoutPage() {
                         required
                       />
                     </div>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="city">City</Label>
@@ -146,7 +130,7 @@ export default function CheckoutPage() {
                           required
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="state">State/Province</Label>
                         <Input
@@ -158,7 +142,7 @@ export default function CheckoutPage() {
                         />
                       </div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="zipCode">ZIP/Postal Code</Label>
@@ -170,7 +154,7 @@ export default function CheckoutPage() {
                           required
                         />
                       </div>
-                      
+
                       <div>
                         <Label htmlFor="country">Country</Label>
                         <Input
@@ -184,10 +168,10 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="p-6 bg-card rounded-lg space-y-4">
                   <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
-                  
+
                   <RadioGroup
                     value={formData.paymentMethod}
                     onValueChange={handleRadioChange}
@@ -203,7 +187,7 @@ export default function CheckoutPage() {
                         <span className="text-xs bg-muted px-2 py-1 rounded">MasterCard</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2 border p-4 rounded-md">
                       <RadioGroupItem value="paypal" id="paypal" />
                       <Label htmlFor="paypal" className="flex-1 cursor-pointer">
@@ -211,42 +195,51 @@ export default function CheckoutPage() {
                       </Label>
                       <span className="text-xs bg-muted px-2 py-1 rounded">PayPal</span>
                     </div>
+
+                    {/* Adicionado método PIX */}
+                    <div className="flex items-center space-x-2 border p-4 rounded-md">
+                      <RadioGroupItem value="pix" id="pix" />
+                      <Label htmlFor="pix" className="flex-1 cursor-pointer">
+                        PIX
+                      </Label>
+                    </div>
                   </RadioGroup>
-                  
+
+                  {/* Campos condicionais para cada método */}
+
                   {formData.paymentMethod === "credit-card" && (
                     <div className="grid grid-cols-1 gap-4 mt-4 pt-4 border-t">
                       <div>
                         <Label htmlFor="cardNumber">Card Number</Label>
-                        <Input
-                          id="cardNumber"
-                          placeholder="0000 0000 0000 0000"
-                          required
-                        />
+                        <Input id="cardNumber" placeholder="0000 0000 0000 0000" required />
                       </div>
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label htmlFor="expiryDate">Expiry Date</Label>
-                          <Input
-                            id="expiryDate"
-                            placeholder="MM/YY"
-                            required
-                          />
+                          <Input id="expiryDate" placeholder="MM/YY" required />
                         </div>
-                        
+
                         <div>
                           <Label htmlFor="cvv">CVV</Label>
-                          <Input
-                            id="cvv"
-                            placeholder="123"
-                            required
-                          />
+                          <Input id="cvv" placeholder="123" required />
                         </div>
                       </div>
                     </div>
                   )}
+
+                  {formData.paymentMethod === "pix" && (
+                    <div className="mt-4">
+                      <PixPayment
+                        amount={totalPrice}
+                        description="Compra no Playverse"
+                        email={formData.email}
+                        externalReference={"pedido_" + Date.now()}
+                      />
+                    </div>
+                  )}
                 </div>
-                
+
                 <Button
                   type="submit"
                   className="w-full bg-ps-blue hover:bg-ps-lightblue"
@@ -257,12 +250,12 @@ export default function CheckoutPage() {
                 </Button>
               </form>
             </div>
-            
+
             {/* Order Summary */}
             <div>
               <div className="sticky top-20 p-6 bg-card rounded-lg space-y-4">
                 <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-                
+
                 <div className="space-y-3">
                   {items.map((item) => (
                     <div key={item.game.id} className="flex justify-between">
@@ -274,7 +267,7 @@ export default function CheckoutPage() {
                     </div>
                   ))}
                 </div>
-                
+
                 <div className="border-t pt-4 mt-4 space-y-2">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
