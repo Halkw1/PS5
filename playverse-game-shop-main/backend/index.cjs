@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// **Configuração correta do Mercado Pago**
+// Configurar o token do Mercado Pago (2.7.0)
 mercadopago.configurations = {
   access_token: process.env.MP_ACCESS_TOKEN,
 };
@@ -69,7 +69,7 @@ app.post('/create_payment_pix', async (req, res) => {
   };
 
   try {
-    // **Corrigido o uso da API do Mercado Pago**
+    // Verifique se o SDK foi corretamente configurado
     const response = await mercadopago.payment.create(payment_data);
 
     if (response.body.status === 'pending') {
@@ -89,7 +89,7 @@ app.post('/create_payment_pix', async (req, res) => {
       res.status(400).json({ message: 'Erro ao criar pagamento PIX' });
     }
   } catch (error) {
-    console.error(error);
+    console.error('Erro no pagamento PIX:', error);
     res.status(500).json({ message: 'Erro interno ao processar pagamento' });
   }
 });
