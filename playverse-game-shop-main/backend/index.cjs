@@ -17,13 +17,13 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// Configurar Mercado Pago para versão antiga do SDK
-mercadopago.configurations.setAccessToken(process.env.MP_ACCESS_TOKEN);
+// Configurar access token diretamente para a versão 2.x.x do SDK
+mercadopago.access_token = process.env.MP_ACCESS_TOKEN;
 
 app.use(cors());
 app.use(express.json());
 
-// Criar tabelas caso não existam
+// Criação das tabelas (usuários e pedidos)
 async function createTables() {
   const usersExists = await knex.schema.hasTable('users');
   if (!usersExists) {
@@ -75,7 +75,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Login de usuário
+// Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -136,7 +136,7 @@ app.post('/create_payment_pix', async (req, res) => {
   }
 });
 
-// Webhook Mercado Pago para atualizar status do pagamento
+// Webhook para atualização do status do pagamento
 app.post('/webhook', async (req, res) => {
   const topic = req.query.topic || req.body.type;
   const id = req.query.id || req.body.data?.id;
@@ -159,7 +159,6 @@ app.post('/webhook', async (req, res) => {
   res.sendStatus(200);
 });
 
-// Start do servidor
 app.listen(PORT, () => {
   console.log(`Backend rodando na porta ${PORT}`);
 });
