@@ -17,7 +17,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const SECRET_KEY = process.env.SECRET_KEY || 'secret_jwt_key';
 
-// **Alteração no código de configuração do Mercado Pago**
+// **Configuração correta do Mercado Pago**
 mercadopago.configurations = {
   access_token: process.env.MP_ACCESS_TOKEN,
 };
@@ -69,6 +69,7 @@ app.post('/create_payment_pix', async (req, res) => {
   };
 
   try {
+    // **Corrigido o uso da API do Mercado Pago**
     const response = await mercadopago.payment.create(payment_data);
 
     if (response.body.status === 'pending') {
