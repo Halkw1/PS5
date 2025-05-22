@@ -18,7 +18,7 @@ export function PixPayment({ amount, description, email, externalReference }: Pi
     setQrCodeBase64(null);
 
     try {
-      const response = await fetch("https://seu-backend.onrender.com/create_payment_pix", {
+      const response = await fetch("https://ps5-89py.onrender.com", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount, description, email, external_reference: externalReference }),
